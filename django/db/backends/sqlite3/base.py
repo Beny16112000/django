@@ -218,14 +218,26 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         with self.wrap_database_errors:
             self.connection.isolation_level = level
 
-    def disable_constraint_checking(self):
-        with self.cursor() as cursor:
+def disable_constraint_checking(connection):
+    """
+    Disable foreign key constraint checking for the given database connection.
+
+    Args:
+        connection: A database connection object with a cursor method.
+
+    Returns:
+        True if foreign key constraints are successfully disabled; False otherwise.
+    """
+    try:
+        with connection.cursor() as cursor:
             cursor.execute("PRAGMA foreign_keys = OFF")
-            # Foreign key constraints cannot be turned off while in a multi-
-            # statement transaction. Fetch the current state of the pragma
-            # to determine if constraints are effectively disabled.
+            # Foreign key constraints cannot be turned off while in a multi-statement transaction. 
+            # Fetch the current state of the pragma to determine if constraints are effectively disabled.
             enabled = cursor.execute("PRAGMA foreign_keys").fetchone()[0]
         return not bool(enabled)
+    except Exception as e:
+        return False
+
 
     def enable_constraint_checking(self):
         with self.cursor() as cursor:
